@@ -126,59 +126,61 @@ if (typeof stasilo == 'undefined')
 		    request.responseType = "arraybuffer";
 
 
-		    //send progress info to callback if avail.
-		    if (typeof this.settings.progress == 'function') 
-			{ 
-			    request.addEventListener("progress", function(e) 
-			    {
-			    	var percent = 0; 
+			//send progress info to callback if avail.
+			const updateProgress = typeof this.settings.progress == 'function';
+		    if (updateProgress) {
+			    request.addEventListener("progress", e => {
+			    	let percent = 0; 
 
-					if ( e.lengthComputable ) 
-					{
+					if ( e.lengthComputable ) {
 						 percent = ( e.loaded / e.total ) * 100;
-
 					}
 
-					settings.progress( {percent: percent, complete: false} ); 
-
-			    }, false);
-
-			    //tell when complete
-			    request.addEventListener("load", function(e)
-			    {
-			    	settings.progress({percent: 100, complete: true});
+					settings.progress( {percent: percent, complete: false, failed: false} ); 
 
 			    }, false);
 			}
 
-		    // this loads asynchronously
+			request.addEventListener("load", e =>
+			{
+				let failed = request.status != 200;
+				if (updateProgress) {
+					settings.progress({
+						percent: 100, 
+						complete: true, 
+						failed: failed, 
+						error: failed ? request.statusText : "" 
+					});
+				}
+				if(!failed) {
+					var audioData = request.response;
 
-		    request.onload = function() 
-		    {
-		        var audioData = request.response;
+					// add buffer to sound source
+					context.decodeAudioData(audioData, 
+						buffer =>
+						{
+							self.soundSource.buffer = self.soundBuffer = buffer;
+	
+							//save length of buffer
+							self.currentDuration = self.soundBuffer.duration; 
+							//self.soundSource.loop = true;
+	
+							self.loading = false;
+							self.startTime = context.currentTime;
+	
+						},
+						e =>
+						{
+							console.error("Error decoding audio data");
+							console.error(e);
+						});	
+				}
+			}, false);
+			
+			request.addEventListener("error", e => {
 
-			    // add buffer to sound source
-				context.decodeAudioData(audioData, 
-				function(buffer)
-				{
-			    	self.soundSource.buffer = self.soundBuffer = buffer;
-
-			    	//save length of buffer
-			        self.currentDuration = self.soundBuffer.duration; 
-			        //self.soundSource.loop = true;
-
-			        self.loading = false;
-			        self.startTime = context.currentTime;
-
-				},
-
-				function(e) 
-				{
-					alert("Error decoding audio data");
-					
-					console.log(e);
-				});	
-		    };
+			}, false);
+			
 
 		    request.send();
 
@@ -192,40 +194,25 @@ if (typeof stasilo == 'undefined')
 		} 
 		else //microphone as soundsource
 		{		
-		    function gotStream(stream)
-		    {
-				self.soundSource = context.createMediaStreamSource(stream);
-
-				self.soundSource.connect(self.analyser);
-				self.soundSource.connect(self.visualizer);
-
-				self.soundSource.connect(self.gainNode);
-
-				self.gainNode.connect(context.destination);	
-
-				self.micStream = stream; 		
-			}
-
-		    navigator.getUserMedia(
-	        {
-	            "audio": 
-	            {
-	                "mandatory": 
-	                {
-	                    "googEchoCancellation": "false",
-	                    "googAutoGainControl": "false",
-	                    "googNoiseSuppression": "false",
-	                    "googHighpassFilter": "false"
+		    navigator.getUserMedia({
+	            audio: {
+	                mandatory: {
+	                    googEchoCancellation: true,
+	                    googAutoGainControl: false,
+	                    googNoiseSuppression: false,
+	                    googHighpassFilter: false
 	                },
-
-	                "optional": []
+	                optional: []
 	            },
-
-	        }, gotStream, 
-	        function(e) 
-	        {
-	            alert('Error getting microphone audio');
-	            console.log(e);
+			}, 
+			stream => {
+				self.soundSource = context.createMediaStreamSource(stream);
+				self.micStream = stream;
+				self.connectGraph(true);	
+			}, 
+			e => {
+	            console.error('Error getting microphone audio');
+	            console.error(e);
 	    	});		
 		}
 	}
