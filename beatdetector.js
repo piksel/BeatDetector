@@ -321,7 +321,7 @@ if (typeof stasilo == 'undefined')
 	    		this.soundSource.connect(this.bandpassFilter);
 	    		this.bandpassFilter.connect(this.analyser);
 
-	    		console.log("Using bandpass filter");
+	    		//console.log("Using bandpass filter");
 	    	}
 	    	else
 	    	{
@@ -447,7 +447,7 @@ if (typeof stasilo == 'undefined')
 
 							if(this.bpmTable[j]['counter'] > 3 && j < 2)
 							{		      
-								console.log("WE HAVE A BEAT MATCH IN TABLE!!!!!!!!!!");
+								//console.log("WE HAVE A BEAT MATCH IN TABLE!!!!!!!!!!");
 							}
 
 							break;
