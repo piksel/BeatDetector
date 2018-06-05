@@ -309,7 +309,7 @@ if (typeof stasilo == 'undefined')
 		},
 
 		// Connect audio graph points
-		connectGraph: function()
+		connectGraph: function(disableOutput)
 		{
 			//this.soundSource.buffer = this.soundBuffer;
 
@@ -332,7 +332,9 @@ if (typeof stasilo == 'undefined')
 	    	this.soundSource.connect(this.gainNode);
 	    	//bandpassFilter.connect(gainNode);
 
-	    	this.gainNode.connect(context.destination);
+			if(!disableOutput) {
+				this.gainNode.connect(context.destination);
+			}
 	    	//this.gainNode.connect(this.visualizer);	
 
 		},
