@@ -47,6 +47,7 @@ if (typeof stasilo == 'undefined')
 		this.instantEnergy = 0;
 		this.prevTime = 0;
 		this.bpmTable = [];
+		this.context = context;
 
 		this.bpm = {time: 0, counter: 0};
 
